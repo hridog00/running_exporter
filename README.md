@@ -13,6 +13,23 @@ python -m exporter.main <guid> <timestamp_ms> --bootstrap-servers kafka:9092 \
     [-X security.protocol=SASL_SSL -X sasl.mechanism=PLAIN ...] [-o output]
 ```
 
+### A través de UI for Apache Kafka
+
+Si el puerto de Kafka no es accesible pero sí la interfaz web, se pueden leer los
+mensajes por su API REST:
+
+```bash
+python -m exporter.main <guid> <timestamp_ms> --kafka-ui http://10.98.120.24:8080 \
+    [--ui-cluster NOMBRE] [--ui-user USUARIO --ui-password CLAVE]
+```
+
+- `--ui-cluster` solo hace falta si la web gestiona varios clusters.
+- `--ui-user`/`--ui-password` solo si la web pide usuario y contraseña.
+- Si la web cuelga de una ruta (p. ej. `http://host:8080/kafka-ui`), pon la URL completa.
+- Funciona con las versiones antiguas (provectus) y nuevas (kafbat) de la herramienta.
+
+### Salida
+
 Genera una imagen por mensaje en `output/<guid>/<timestamp>/`:
 
 ```
