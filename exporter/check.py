@@ -112,7 +112,7 @@ def check_kafka(bootstrap, extra_config, guid=None):
         print(f"  ... y {len(detections) - 20} más")
 
     if guid:
-        check_topic(f"{guid}_detections", set(metadata.topics))
+        return check_topic(f"{guid}_detections", set(metadata.topics))
     return True
 
 

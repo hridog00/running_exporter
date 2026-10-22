@@ -152,3 +152,10 @@ def test_check_kafka_port_closed(capsys):
         port = s.getsockname()[1]
     assert main(["--bootstrap-servers", f"127.0.0.1:{port}"]) == 1
     assert "rechazada" in capsys.readouterr().out
+
+
+def test_check_topic_case_mismatch(capsys):
+    from exporter.check import check_topic
+
+    assert not check_topic("ABC_detections", {"abc_detections"})
+    assert "abc_detections" in capsys.readouterr().out
