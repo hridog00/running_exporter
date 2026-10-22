@@ -19,6 +19,7 @@ dev = ["pytest>=7"]
 
 [project.scripts]
 kafka-connector = "exporter.main:main"
+kafka-connector-check = "exporter.check:main"
 
 [tool.setuptools.packages.find]
 include = ["exporter*"]

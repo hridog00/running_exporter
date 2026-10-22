@@ -132,3 +132,23 @@ def test_unknown_topic(ui_server):
 def test_iso_to_ms():
     assert iso_to_ms("2026-10-05T11:19:54.246Z") == 1791199194246
     assert iso_to_ms(None) is None
+
+
+def test_check_kafka_ui(ui_server, capsys):
+    from exporter.check import main
+
+    assert main(["--kafka-ui", ui_server["url"], "--guid", "g"]) == 0
+    assert main(["--kafka-ui", ui_server["url"], "--guid", "otro"]) == 1
+    assert "no existe" in capsys.readouterr().out
+
+
+def test_check_kafka_port_closed(capsys):
+    import socket
+
+    from exporter.check import main
+
+    with socket.socket() as s:  # puerto libre sin nadie escuchando
+        s.bind(("127.0.0.1", 0))
+        port = s.getsockname()[1]
+    assert main(["--bootstrap-servers", f"127.0.0.1:{port}"]) == 1
+    assert "rechazada" in capsys.readouterr().out

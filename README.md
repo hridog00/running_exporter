@@ -5,6 +5,15 @@ los 5 mensajes anteriores y los 5 posteriores al timestamp, se queda solo con lo
 que tienen algún elemento en `Objects`, obtiene la imagen de cada frame con
 `get_image(guid, FrameTimestamp)` y pinta cada objeto (caja `Tlwh` + `Label` y `Score`).
 
+## Comprobar la conexión
+
+Antes de exportar, comprueba paso a paso la conexión (red, Kafka, brokers, topic):
+
+```bash
+kafka-connector-check --bootstrap-servers 10.98.120.24:9092 [--guid <guid>]
+kafka-connector-check --kafka-ui http://10.98.120.24:8080 [--guid <guid>]
+```
+
 ## Uso
 
 ```bash
