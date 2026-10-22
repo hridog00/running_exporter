@@ -1,4 +1,4 @@
-# running_exporter
+# kafka-connector
 
 Dado un `guid` y un `timestamp` (ms), lee del topic de Kafka `<guid>_detections`
 los 5 mensajes anteriores y los 5 posteriores al timestamp, se queda solo con los
