@@ -159,3 +159,16 @@ def test_check_topic_case_mismatch(capsys):
 
     assert not check_topic("ABC_detections", {"abc_detections"})
     assert "abc_detections" in capsys.readouterr().out
+
+
+def test_cli_list_only_and_blank_image(ui_server, tmp_path, capsys):
+    from exporter.main import main
+
+    main(["g", "200", "--kafka-ui", ui_server["url"], "--list-only", "-o", str(tmp_path)])
+    out = capsys.readouterr().out
+    assert "Anteriores: 5" in out and "Posteriores: 5" in out
+    assert not any(tmp_path.iterdir())
+
+    main(["g", "200", "--kafka-ui", ui_server["url"], "--blank-image", "-o", str(tmp_path)])
+    files = sorted(p.name for p in (tmp_path / "g" / "200").iterdir())
+    assert len(files) == 10 and files[0].startswith("anterior_01_")

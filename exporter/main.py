@@ -2,7 +2,10 @@
 
 import argparse
 import logging
+from datetime import datetime, timezone
 from pathlib import Path
+
+from PIL import Image
 
 from .detections import has_objects
 from .drawing import draw_objects
@@ -37,6 +40,28 @@ def export(guid, timestamp, before, after, output_dir, get_image=default_get_ima
     return paths
 
 
+def blank_image(guid, timestamp, width=1080, height=1920):
+    """Sustituto de get_image para pruebas: fondo gris liso."""
+    return Image.new("RGB", (width, height), (90, 90, 90))
+
+
+def format_ts(ms):
+    return datetime.fromtimestamp(ms / 1000, timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+
+
+def print_detections(timestamp, before, after):
+    print(f"Timestamp buscado: {timestamp} ({format_ts(timestamp)} UTC)")
+    for position, detections in ((BEFORE, before), (AFTER, after)):
+        print(f"\n{position.capitalize()}es: {len(detections)}")
+        for det in detections:
+            labels = ", ".join(
+                f"{o.get('Label')} {float(o.get('Score') or 0):.2f}" for o in det.objects
+            )
+            mark = "se pinta" if has_objects(det) else "sin objetos, se descarta"
+            print(f"  {det.frame_timestamp} ({format_ts(det.frame_timestamp)})  "
+                  f"part {det.partition} offset {det.offset}  [{mark}] {labels}")
+
+
 def run(guid, timestamp, reader, output_dir="output", window=5, get_image=default_get_image):
     """`reader`: DetectionsReader (Kafka directo) o KafkaUIDetectionsReader (vía web)."""
     before, after = reader.fetch(guid, timestamp, before=window, after=window)
@@ -66,6 +91,10 @@ def main(argv=None):
     parser.add_argument("--margin", type=int, default=5,
                         help="Offsets extra a leer por partición alrededor del timestamp")
     parser.add_argument("-o", "--output-dir", default="output")
+    parser.add_argument("--list-only", action="store_true",
+                        help="Solo mostrar los mensajes encontrados, sin generar imágenes")
+    parser.add_argument("--blank-image", action="store_true",
+                        help="Pintar sobre un fondo liso en lugar de llamar a get_image (pruebas)")
 
     ui = parser.add_argument_group("UI for Apache Kafka (en lugar de conexión directa)")
     ui.add_argument("--kafka-ui", metavar="URL",
@@ -97,7 +126,22 @@ def main(argv=None):
                         **parse_kafka_config(args.kafka_config)}
         reader = DetectionsReader(kafka_config, margin=args.margin)
 
-    paths = run(args.guid, args.timestamp, reader, args.output_dir, args.window)
+    before, after = reader.fetch(args.guid, args.timestamp, before=args.window, after=args.window)
+    print_detections(args.timestamp, before, after)
+    if args.list_only:
+        return
+
+    get_image = default_get_image
+    if args.blank_image:
+        frames = {d.frame_timestamp: d.payload for d in before + after}
+
+        def get_image(guid, ts):
+            payload = frames.get(ts, {})
+            return blank_image(guid, ts, payload.get("FrameWidth") or 1080,
+                               payload.get("FrameHeight") or 1920)
+
+    paths = export(args.guid, args.timestamp, before, after, args.output_dir, get_image)
+    print(f"\nImágenes generadas: {len(paths)}")
     for path in paths:
         print(path)
 
